@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>API Request Builder — Free REST API Tester</title>
+<meta name="description" content="Free browser-based API request builder. Test REST APIs with GET, POST, PUT, PATCH, DELETE. Import cURL, syntax highlighting, request history.">
+<meta property="og:title" content="API Request Builder — Free REST API Tester">
+<meta property="og:description" content="Test REST APIs directly in your browser. Supports all HTTP methods, auth, headers, cURL import/export, and request history.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://api-builder.cioa.pages.dev">
+<meta property="og:image" content="https://api-builder.cioa.pages.dev/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://api-builder.cioa.pages.dev">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication","name":"API Request Builder","url":"https://api-builder.cioa.pages.dev","description":"Free browser-based REST API testing tool","applicationCategory":"DeveloperApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"featureList":["Send REST API requests","cURL import and export","Request history","Syntax-highlighted responses"]}</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--accent:#58a6ff;--green:#3fb950;--red:#f85149;--orange:#d29922;--purple:#bc8cff;--radius:6px}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+.container{max-width:1200px;margin:0 auto;padding:0 16px}
+header{border-bottom:1px solid var(--border);padding:16px 0;background:var(--surface)}
+header .container{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+header h1{font-size:20px;font-weight:600}
+header h1 span{color:var(--accent)}
+.subtitle{color:var(--muted);font-size:13px}
+main{padding:24px 0 60px}
+/* Request bar */
+.request-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.method-select{background:var(--surface);color:var(--green);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;font-size:14px;font-weight:600;min-width:110px;cursor:pointer}
+.method-select option{background:var(--surface);color:var(--text)}
+.url-input{flex:1;min-width:200px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-size:14px;font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace}
+.url-input:focus{outline:none;border-color:var(--accent)}
+.btn{padding:8px 16px;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;font-size:14px;font-weight:500;transition:all .15s}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary:hover{opacity:.85}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn-ghost{background:transparent;color:var(--muted)}
+.btn-ghost:hover{color:var(--text)}
+.btn-danger{color:var(--red)}
+/* Tabs */
+.tabs{display:flex;border-bottom:1px solid var(--border);gap:0;margin-bottom:16px;overflow-x:auto}
+.tab{padding:8px 16px;cursor:pointer;color:var(--muted);font-size:13px;border-bottom:2px solid transparent;white-space:nowrap;user-select:none}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-content{display:none}
+.tab-content.active{display:block}
+/* Headers / KV */
+.kv-row{display:flex;gap:8px;margin-bottom:8px;align-items:center}
+.kv-row input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:6px 10px;color:var(--text);font-size:13px;font-family:inherit}
+.kv-row input:focus{outline:none;border-color:var(--accent)}
+.kv-row .remove-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:0 4px;flex-shrink:0}
+.kv-row .remove-btn:hover{color:var(--red)}
+.add-row-btn{color:var(--accent);background:none;border:none;cursor:pointer;font-size:13px;padding:4px 0}
+.add-row-btn:hover{text-decoration:underline}
+/* Body */
+.body-type-select{background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:var(--radius);padding:6px 10px;font-size:13px;margin-bottom:8px}
+textarea.body-editor{width:100%;min-height:200px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px;color:var(--text);font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:13px;resize:vertical}
+textarea.body-editor:focus{outline:none;border-color:var(--accent)}
+/* Auth */
+.auth-type-select{background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:var(--radius);padding:6px 10px;font-size:13px;margin-bottom:12px}
+.auth-fields label{display:block;color:var(--muted);font-size:12px;margin-bottom:2px;margin-top:8px}
+.auth-fields input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:6px 10px;color:var(--text);font-size:13px}
+.auth-fields input:focus{outline:none;border-color:var(--accent)}
+/* Response */
+.response-section{margin-top:24px;border-top:1px solid var(--border);padding-top:16px}
+.response-meta{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.status-badge{padding:4px 10px;border-radius:var(--radius);font-size:13px;font-weight:600}
+.status-2xx{background:rgba(63,185,80,.15);color:var(--green)}
+.status-3xx{background:rgba(210,153,34,.15);color:var(--orange)}
+.status-4xx{background:rgba(248,81,73,.15);color:var(--red)}
+.status-5xx{background:rgba(248,81,73,.15);color:var(--red)}
+.time-badge{color:var(--muted);font-size:13px}
+.size-badge{color:var(--muted);font-size:13px}
+.response-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:12px}
+.response-tab{padding:6px 14px;cursor:pointer;color:var(--muted);font-size:12px;border-bottom:2px solid transparent}
+.response-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.response-panel{display:none}
+.response-panel.active{display:block}
+.response-headers-table{width:100%;border-collapse:collapse;font-size:13px}
+.response-headers-table th,.response-headers-table td{padding:6px 10px;border:1px solid var(--border);text-align:left}
+.response-headers-table th{background:var(--surface);color:var(--muted);font-weight:500;width:30%}
+.response-body{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:13px;overflow-x:auto;max-height:500px;overflow-y:auto;white-space:pre-wrap;word-break:break-word}
+.json-key{color:var(--accent)}.json-string{color:var(--green)}.json-number{color:var(--orange)}.json-bool{color:var(--purple)}.json-null{color:var(--muted)}
+.html-preview{background:#fff;color:#000;border:1px solid var(--border);border-radius:var(--radius);padding:12px;max-height:500px;overflow:auto}
+/* Curl modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:24px;max-width:640px;width:90%;max-height:80vh;overflow-y:auto}
+.modal h2{margin-bottom:12px;font-size:16px}
+.modal textarea{width:100%;min-height:120px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:10px;color:var(--text);font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:13px;resize:vertical}
+.modal-actions{display:flex;gap:8px;margin-top:12px;justify-content:flex-end}
+/* History */
+.history-section{margin-top:32px;border-top:1px solid var(--border);padding-top:16px}
+.history-section h3{font-size:15px;margin-bottom:12px}
+.history-item{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:6px;cursor:pointer;font-size:13px}
+.history-item:hover{border-color:var(--accent)}
+.history-method{font-weight:600;min-width:60px}
+.history-url{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:12px}
+.history-time{color:var(--muted);font-size:11px;white-space:nowrap}
+.history-delete{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0}
+.history-delete:hover{color:var(--red)}
+/* Features */
+.features-section{margin-top:48px;border-top:1px solid var(--border);padding-top:32px}
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;margin-top:16px}
+.feature-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px}
+.feature-card h3{font-size:15px;margin-bottom:6px;color:var(--accent)}
+.feature-card p{color:var(--muted);font-size:13px}
+/* FAQ */
+.faq-section{margin-top:48px;border-top:1px solid var(--border);padding-top:32px}
+.faq-item{border-bottom:1px solid var(--border);padding:16px 0}
+.faq-q{font-size:15px;font-weight:500;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.faq-q::after{content:'+';color:var(--muted);font-size:18px}
+.faq-item.open .faq-q::after{content:'−'}
+.faq-a{display:none;color:var(--muted);font-size:14px;margin-top:8px;line-height:1.6}
+.faq-item.open .faq-a{display:block}
+/* Cross links */
+.cross-links{margin-top:48px;display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+.cross-links a{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:8px 16px;font-size:13px;color:var(--text)}
+.cross-links a:hover{border-color:var(--accent);color:var(--accent)}
+/* Email widget */
+.email-widget{margin-top:32px;text-align:center;padding:24px;background:var(--surface);border:1px solid var(--border);border-radius:8px}
+.email-widget h3{font-size:15px;margin-bottom:8px}
+.email-widget p{color:var(--muted);font-size:13px;margin-bottom:12px}
+.email-form{display:flex;gap:8px;max-width:400px;margin:0 auto}
+.email-form input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-size:13px}
+.email-form input:focus{outline:none;border-color:var(--accent)}
+/* Footer */
+footer{border-top:1px solid var(--border);padding:24px 0;text-align:center;color:var(--muted);font-size:12px}
+footer a{color:var(--muted)}
+footer a:hover{color:var(--accent)}
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 16px;font-size:13px;color:var(--text);opacity:0;transition:opacity .3s;pointer-events:none;z-index:200}
+.toast.show{opacity:1}
+/* Loading */
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;margin-right:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:600px){.request-bar{flex-direction:column}.method-select{width:100%}.kv-row{flex-wrap:wrap}.email-form{flex-direction:column}}
+</style>
+</head>
+<body>
+<header>
+<div class="container">
+<div>
+<h1><span>API</span> Request Builder</h1>
+<p class="subtitle">Free REST API Tester — test endpoints directly in your browser</p>
+</div>
+<div style="display:flex;gap:8px">
+<button class="btn btn-sm btn-ghost" onclick="openCurlImport()">Import cURL</button>
+<button class="btn btn-sm btn-ghost" onclick="copyAsCurl()">Copy as cURL</button>
+</div>
+</div>
+</header>
+
+<main class="container">
+<!-- Request bar -->
+<div class="request-bar">
+<select id="method" class="method-select">
+<option value="GET">GET</option>
+<option value="POST">POST</option>
+<option value="PUT">PUT</option>
+<option value="PATCH">PATCH</option>
+<option value="DELETE">DELETE</option>
+<option value="HEAD">HEAD</option>
+<option value="OPTIONS">OPTIONS</option>
+</select>
+<input id="url" class="url-input" type="text" placeholder="https://jsonplaceholder.typicode.com/posts/1" spellcheck="false">
+<button id="sendBtn" class="btn btn-primary" onclick="sendRequest()">Send</button>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+<div class="tab active" data-tab="params" onclick="switchTab(this,'params')">Params</div>
+<div class="tab" data-tab="headers" onclick="switchTab(this,'headers')">Headers</div>
+<div class="tab" data-tab="body" onclick="switchTab(this,'body')">Body</div>
+<div class="tab" data-tab="auth" onclick="switchTab(this,'auth')">Auth</div>
+</div>
+
+<!-- Params -->
+<div id="tab-params" class="tab-content active">
+<div id="params-rows"></div>
+<button class="add-row-btn" onclick="addKVRow('params-rows')">+ Add parameter</button>
+</div>
+
+<!-- Headers -->
+<div id="tab-headers" class="tab-content">
+<div id="headers-rows"></div>
+<button class="add-row-btn" onclick="addKVRow('headers-rows')">+ Add header</button>
+</div>
+
+<!-- Body -->
+<div id="tab-body" class="tab-content">
+<select id="bodyType" class="body-type-select" onchange="toggleBodyType()">
+<option value="none">none</option>
+<option value="json">JSON</option>
+<option value="form-data">form-data</option>
+<option value="x-www-form-urlencoded">x-www-form-urlencoded</option>
+<option value="raw">raw text</option>
+</select>
+<div id="body-json">
+<textarea id="jsonEditor" class="body-editor" placeholder='{"key": "value"}'></textarea>
+</div>
+<div id="body-formdata" style="display:none">
+<div id="formdata-rows"></div>
+<button class="add-row-btn" onclick="addKVRow('formdata-rows')">+ Add field</button>
+</div>
+<div id="body-urlencoded" style="display:none">
+<div id="urlencoded-rows"></div>
+<button class="add-row-btn" onclick="addKVRow('urlencoded-rows')">+ Add field</button>
+</div>
+<div id="body-raw" style="display:none">
+<textarea id="rawEditor" class="body-editor" placeholder="Enter raw text body..."></textarea>
+</div>
+</div>
+
+<!-- Auth -->
+<div id="tab-auth" class="tab-content">
+<select id="authType" class="auth-type-select" onchange="toggleAuthType()">
+<option value="none">No Auth</option>
+<option value="bearer">Bearer Token</option>
+<option value="basic">Basic Auth</option>
+<option value="apikey">API Key</option>
+</select>
+<div id="auth-bearer" class="auth-fields" style="display:none">
+<label>Token</label>
+<input id="bearerToken" type="text" placeholder="eyJhbGciOiJIUzI1NiIs...">
+</div>
+<div id="auth-basic" class="auth-fields" style="display:none">
+<label>Username</label>
+<input id="basicUser" type="text">
+<label>Password</label>
+<input id="basicPass" type="password">
+</div>
+<div id="auth-apikey" class="auth-fields" style="display:none">
+<label>Key</label>
+<input id="apikeyKey" type="text" placeholder="X-API-Key">
+<label>Value</label>
+<input id="apikeyValue" type="text">
+<label>Add to</label>
+<select id="apikeyIn" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:var(--radius);padding:6px 10px;font-size:13px;width:100%">
+<option value="header">Header</option>
+<option value="query">Query Parameter</option>
+</select>
+</div>
+</div>
+
+<!-- Response -->
+<div id="response-section" class="response-section" style="display:none">
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+<h3 style="font-size:15px">Response</h3>
+<div style="display:flex;gap:8px">
+<button class="btn btn-sm btn-ghost" onclick="copyResponse()">Copy Response</button>
+</div>
+</div>
+<div class="response-meta" id="responseMeta"></div>
+<div class="response-tabs">
+<div class="response-tab active" data-rtab="body" onclick="switchResponseTab(this,'body')">Body</div>
+<div class="response-tab" data-rtab="headers" onclick="switchResponseTab(this,'headers')">Headers</div>
+</div>
+<div id="rpanel-body" class="response-panel active">
+<div style="display:flex;gap:8px;margin-bottom:8px">
+<button class="btn btn-sm btn-ghost" onclick="switchBodyView('pretty')" id="bv-pretty" style="color:var(--accent)">Pretty</button>
+<button class="btn btn-sm btn-ghost" onclick="switchBodyView('raw')" id="bv-raw">Raw</button>
+<button class="btn btn-sm btn-ghost" onclick="switchBodyView('preview')" id="bv-preview">Preview</button>
+</div>
+<div id="response-body-pretty" class="response-body"></div>
+<div id="response-body-raw" class="response-body" style="display:none"></div>
+<div id="response-body-preview" class="html-preview" style="display:none"></div>
+</div>
+<div id="rpanel-headers" class="response-panel">
+<table class="response-headers-table" id="responseHeadersTable">
+<thead><tr><th>Key</th><th>Value</th></tr></thead>
+<tbody id="responseHeadersBody"></tbody>
+</table>
+</div>
+</div>
+
+<!-- History -->
+<div class="history-section">
+<h3>History <span style="color:var(--muted);font-weight:400;font-size:12px">(last 10)</span></h3>
+<div id="history-list"></div>
+</div>
+
+<!-- Features -->
+<div class="features-section">
+<h2 style="font-size:18px;text-align:center;margin-bottom:4px">Features</h2>
+<div class="features-grid">
+<div class="feature-card">
+<h3>All HTTP Methods</h3>
+<p>Send GET, POST, PUT, PATCH, DELETE, HEAD, and OPTIONS requests with full control over headers, body, and authentication.</p>
+</div>
+<div class="feature-card">
+<h3>cURL Import &amp; Export</h3>
+<p>Paste any cURL command to instantly populate the form. Copy your configured request as a cURL command to share or script.</p>
+</div>
+<div class="feature-card">
+<h3>Syntax Highlighting</h3>
+<p>JSON responses are automatically formatted and color-coded. Switch between pretty, raw, and HTML preview modes.</p>
+</div>
+<div class="feature-card">
+<h3>Request History</h3>
+<p>Your last 10 requests are saved locally in your browser. Reload any past request with a single click — no account needed.</p>
+</div>
+</div>
+</div>
+
+<!-- FAQ -->
+<div class="faq-section">
+<h2 style="font-size:18px;text-align:center;margin-bottom:16px">Frequently Asked Questions</h2>
+<div class="faq-item" onclick="this.classList.toggle('open')">
+<div class="faq-q">Is this tool free to use?</div>
+<div class="faq-a">Yes, completely free. API Request Builder runs entirely in your browser — no sign-up, no server, no data collection. All requests are made directly from your device.</div>
+</div>
+<div class="faq-item" onclick="this.classList.toggle('open')">
+<div class="faq-q">Does it support CORS-restricted APIs?</div>
+<div class="faq-a">Since requests are made from the browser via the Fetch API, CORS restrictions apply. Public APIs with permissive CORS headers will work. For restricted APIs, consider using a CORS proxy or a server-side tool like cURL.</div>
+</div>
+<div class="faq-item" onclick="this.classList.toggle('open')">
+<div class="faq-q">Is my data stored or sent anywhere?</div>
+<div class="faq-a">No. Everything runs client-side. Request history is stored in your browser's localStorage. No data is ever sent to any server. Clearing your browser data removes the history.</div>
+</div>
+</div>
+
+<!-- Cross links -->
+<div class="cross-links">
+<a href="https://regexcrossword.cioa.pages.dev" target="_blank" rel="noopener">Regex Crossword</a>
+<a href="https:// cheatsheet.cioa.pages.dev" target="_blank" rel="noopener">Developer Cheatsheet</a>
+</div>
+
+<!-- Email widget -->
+<div class="email-widget">
+<h3>Stay Updated</h3>
+<p>Get notified about new features and developer tools.</p>
+<div class="email-form">
+<input type="email" id="emailInput" placeholder="you@example.com">
+<button class="btn btn-primary btn-sm" onclick="subscribeEmail()">Subscribe</button>
+</div>
+</div>
+</main>
+
+<footer>
+<div class="container">
+<p>&copy; 2026 API Request Builder. Built for developers, by developers.</p>
+<p style="margin-top:4px"><a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a></p>
+</div>
+</footer>
+
+<!-- cURL Import Modal -->
+<div class="modal-overlay" id="curlModal">
+<div class="modal">
+<h2>Import cURL</h2>
+<p style="color:var(--muted);font-size:13px;margin-bottom:12px">Paste a cURL command below. We'll parse the method, URL, headers, and body.</p>
+<textarea id="curlInput" placeholder='curl -X POST https://api.example.com/data -H "Content-Type: application/json" -d &#39;{"key":"value"}&#39;'></textarea>
+<div class="modal-actions">
+<button class="btn btn-sm btn-ghost" onclick="closeCurlImport()">Cancel</button>
+<button class="btn btn-sm btn-primary" onclick="parseCurl()">Import</button>
+</div>
+</div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// --- State ---
+const $=id=>document.getElementById(id);
+const HISTORY_KEY='api-builder-history';
+
+// --- Tabs ---
+function switchTab(el,tab){
+  document.querySelectorAll('.tabs .tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  $('tab-'+tab).classList.add('active');
+}
+function switchResponseTab(el,tab){
+  document.querySelectorAll('.response-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.response-panel').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  $('rpanel-'+tab).classList.add('active');
+}
+function switchBodyView(v){
+  ['pretty','raw','preview'].forEach(k=>{
+    $('bv-'+k).style.color=k===v?'var(--accent)':'var(--muted)';
+    $('response-body-'+k).style.display=k===v?'block':'none';
+  });
+}
+
+// --- KV Rows ---
+function addKVRow(containerId,key='',val=''){
+  const c=$(containerId);
+  const row=document.createElement('div');
+  row.className='kv-row';
+  row.innerHTML=`<input type="text" placeholder="Key" value="${esc(key)}"><input type="text" placeholder="Value" value="${esc(val)}"><button class="remove-btn" onclick="this.parentElement.remove()" title="Remove">×</button>`;
+  c.appendChild(row);
+}
+function getKVRows(containerId){
+  const rows=$(containerId).querySelectorAll('.kv-row');
+  const result=[];
+  rows.forEach(r=>{
+    const inputs=r.querySelectorAll('input');
+    const k=inputs[0].value.trim(),v=inputs[1].value.trim();
+    if(k)result.push([k,v]);
+  });
+  return result;
+}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}
+
+// --- Body type ---
+function toggleBodyType(){
+  const t=$('bodyType').value;
+  $('body-json').style.display=t==='json'?'block':'none';
+  $('body-formdata').style.display=t==='form-data'?'block':'none';
+  $('body-urlencoded').style.display=t==='x-www-form-urlencoded'?'block':'none';
+  $('body-raw').style.display=t==='raw'?'block':'none';
+}
+
+// --- Auth type ---
+function toggleAuthType(){
+  const t=$('authType').value;
+  $('auth-bearer').style.display=t==='bearer'?'block':'none';
+  $('auth-basic').style.display=t==='basic'?'block':'none';
+  $('auth-apikey').style.display=t==='apikey'?'block':'none';
+}
+
+// --- Toast ---
+function showToast(msg){
+  const t=$('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
+}
+
+// --- Build request ---
+function buildRequest(){
+  const method=$('method').value;
+  let url=$('url').value.trim();
+  if(!url){showToast('Please enter a URL');return null}
+
+  const headers=new Headers();
+  getKVRows('headers-rows').forEach(([k,v])=>headers.set(k,v));
+
+  // Auth
+  const authType=$('authType').value;
+  if(authType==='bearer'){
+    headers.set('Authorization','Bearer '+$('bearerToken').value.trim());
+  }else if(authType==='basic'){
+    const u=$('basicUser').value,p=$('basicPass').value;
+    headers.set('Authorization','Basic '+btoa(u+':'+p));
+  }else if(authType==='apikey'){
+    const key=$('apikeyKey').value.trim(),val=$('apikeyValue').value.trim(),loc=$('apikeyIn').value;
+    if(loc==='header')headers.set(key,val);
+    else{const sep=url.includes('?')?'&':'?';url+=sep+encodeURIComponent(key)+'='+encodeURIComponent(val)}
+  }
+
+  // Query params
+  const params=getKVRows('params-rows');
+  if(params.length){
+    const sep=url.includes('?')?'&':'?';
+    url+=sep+params.map(([k,v])=>encodeURIComponent(k)+'='+encodeURIComponent(v)).join('&');
+  }
+
+  const bodyType=$('bodyType').value;
+  let body=undefined;
+  if(method!=='GET'&&method!=='HEAD'&&bodyType!=='none'){
+    if(bodyType==='json'){
+      headers.set('Content-Type','application/json',);
+      body=$('jsonEditor').value;
+    }else if(bodyType==='form-data'){
+      const fd=new FormData();
+      getKVRows('formdata-rows').forEach(([k,v])=>fd.append(k,v));
+      body=fd;
+    }else if(bodyType==='x-www-form-urlencoded'){
+      headers.set('Content-Type','application/x-www-form-urlencoded');
+      body=getKVRows('urlencoded-rows').map(([k,v])=>encodeURIComponent(k)+'='+encodeURIComponent(v)).join('&');
+    }else if(bodyType==='raw'){
+      body=$('rawEditor').value;
+    }
+  }
+
+  return{method,url,headers,body};
+}
+
+// --- Send ---
+let lastResponse=null;
+async function sendRequest(){
+  const req=buildRequest();
+  if(!req)return;
+
+  const btn=$('sendBtn');
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span>Sending...';
+
+  const startTime=performance.now();
+  try{
+    const resp=await fetch(req.url,{method:req.method,headers:req.headers,body:req.body});
+    const elapsed=Math.round(performance.now()-startTime);
+    const text=await resp.text();
+    const size=new Blob([text]).size;
+
+    // Headers
+    const respHeaders=[];
+    resp.headers.forEach((v,k)=>respHeaders.push([k,v]));
+
+    // Store
+    lastResponse={status:resp.status,statusText:resp.statusText,time:elapsed,size,headers:respHeaders,body:text,url:req.url,method:req.method};
+
+    renderResponse(lastResponse);
+    saveHistory(req.method,req.url,resp.status,elapsed);
+  }catch(err){
+    const elapsed=Math.round(performance.now()-startTime);
+    $('response-section').style.display='block';
+    $('responseMeta').innerHTML=`<span class="status-badge status-5xx">Error</span><span class="time-badge">${elapsed} ms</span><span style="color:var(--red);font-size:13px">${esc(err.message)}</span>`;
+  }finally{
+    btn.disabled=false;
+    btn.textContent='Send';
+  }
+}
+
+function renderResponse(r){
+  $('response-section').style.display='block';
+  const cls=r.status<300?'status-2xx':r.status<400?'status-3xx':'status-5xx';
+  const sizeStr=r.size>1024?(r.size/1024).toFixed(1)+' KB':r.size+' B';
+  $('responseMeta').innerHTML=`<span class="status-badge ${cls}">${r.status} ${esc(r.statusText)}</span><span class="time-badge">${r.time} ms</span><span class="size-badge">${sizeStr}</span>`;
+
+  // Headers table
+  const tbody=$('responseHeadersBody');
+  tbody.innerHTML=r.headers.map(([k,v])=>`<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('');
+
+  // Body
+  $('response-body-raw').textContent=r.body;
+  try{
+    const obj=JSON.parse(r.body);
+    $('response-body-pretty').innerHTML=syntaxHighlight(obj);
+    $('response-body-preview').innerHTML=r.body;
+  }catch{
+    $('response-body-pretty').textContent=r.body;
+    $('response-body-preview').innerHTML=r.body;
+  }
+  switchBodyView('pretty');
+  $('response-section').scrollIntoView({behavior:'smooth'});
+}
+
+function syntaxHighlight(json){
+  if(typeof json!=='string')json=JSON.stringify(json,null,2);
+  json=esc(json);
+  return json.replace(/("(\\u[a-fA-F0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,function(match){
+    let cls='json-number';
+    if(/^"/.test(match)){if(/:$/.test(match))cls='json-key';else cls='json-string'}
+    else if(/true|false/.test(match))cls='json-bool';
+    else if(/null/.test(match))cls='json-null';
+    return '<span class="'+cls+'">'+match+'</span>';
+  });
+}
+
+// --- Copy ---
+function copyResponse(){
+  if(!lastResponse)return showToast('No response to copy');
+  navigator.clipboard.writeText(lastResponse.body).then(()=>showToast('Response copied'));
+}
+
+function copyAsCurl(){
+  const req=buildRequest();
+  if(!req)return;
+  let parts=['curl'];
+  if(req.method!=='GET')parts.push('-X '+req.method);
+  req.headers.forEach((v,k)=>{
+    if(k.toLowerCase()!=='host')parts.push(`-H '${k}: ${v}'`);
+  });
+  if(req.body&&typeof req.body==='string')parts.push(`-d '${req.body.replace(/'/g,"'\\''")}'`);
+  parts.push(`'${req.url}'`);
+  navigator.clipboard.writeText(parts.join(' \\\n  ')).then(()=>showToast('cURL copied'));
+}
+
+// --- cURL Import ---
+function openCurlImport(){$('curlModal').classList.add('open')}
+function closeCurlImport(){$('curlModal').classList.remove('open')}
+function parseCurl(){
+  const raw=$('curlInput').value.trim();
+  if(!raw){showToast('Paste a cURL command');return}
+
+  // Tokenize
+  const tokens=[];
+  let cur='',inQ=false,qChar='';
+  for(let i=0;i<raw.length;i++){
+    const c=raw[i];
+    if(inQ){if(c===qChar)inQ=false;else cur+=c}
+    else if(c==='"'||c==="'"){inQ=true;qChar=c}
+    else if(c==='\\'&&i+1<raw.length){cur+=raw[++i]}
+    else if(/\s/.test(c)){if(cur){tokens.push(cur);cur=''}}
+    else cur+=c;
+  }
+  if(cur)tokens.push(cur);
+
+  let method='GET',url='',headers=[],body='';
+  for(let i=0;i<tokens.length;i++){
+    const t=tokens[i];
+    if(t==='curl')continue;
+    if(t==='-X'||t==='--request'){method=tokens[++i]||'GET';continue}
+    if(t==='-H'||t==='--header'){const h=tokens[++i];if(h){const idx=h.indexOf(':');if(idx>0)headers.push([h.slice(0,idx).trim(),h.slice(idx+1).trim()])}continue}
+    if(t==='-d'||t==='--data'||t==='--data-raw'||t==='--data-binary'){body=tokens[++i]||'';if(method==='GET')method='POST';continue}
+    if(t.startsWith('http://')||t.startsWith('https://')){url=t;continue}
+  }
+  if(!url&&tokens.length){const last=tokens[tokens.length-1];if(last.startsWith('http'))url=last}
+
+  $('method').value=method;
+  $('url').value=url;
+
+  // Clear & set headers
+  $('headers-rows').innerHTML='';
+  headers.forEach(([k,v])=>addKVRow('headers-rows',k,v));
+
+  // Body
+  if(body){
+    $('bodyType').value='json';
+    toggleBodyType();
+    $('jsonEditor').value=body;
+  }
+
+  closeCurlImport();
+  showToast('cURL imported');
+}
+
+// --- History ---
+function loadHistory(){try{return JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]')}catch{return[]}}
+function saveHistory(method,url,status,time){
+  let h=loadHistory();
+  h.unshift({method,url,status,time,ts:Date.now()});
+  if(h.length>10)h=h.slice(0,10);
+  localStorage.setItem(HISTORY_KEY,JSON.stringify(h));
+  renderHistory();
+}
+function renderHistory(){
+  const h=loadHistory();
+  const el=$('history-list');
+  if(!h.length){el.innerHTML='<p style="color:var(--muted);font-size:13px">No requests yet.</p>';return}
+  el.innerHTML=h.map((r,i)=>{
+    const d=new Date(r.ts);
+    const ts=d.toLocaleDateString()+' '+d.toLocaleTimeString();
+    const cls=r.status<300?'var(--green)':r.status<400?'var(--orange)':'var(--red)';
+    return `<div class="history-item" onclick="loadFromHistory(${i})"><span class="history-method" style="color:${cls}">${esc(r.method)}</span><span class="history-url">${esc(r.url)}</span><span class="history-time">${r.status} · ${r.time}ms · ${ts}</span><button class="history-delete" onclick="event.stopPropagation();deleteHistory(${i})" title="Remove">×</button></div>`;
+  }).join('');
+}
+function loadFromHistory(i){
+  const h=loadHistory()[i];
+  if(!h)return;
+  $('method').value=h.method;
+  $('url').value=h.url;
+  showToast('Request loaded');
+}
+function deleteHistory(i){
+  let h=loadHistory();
+  h.splice(i,1);
+  localStorage.setItem(HISTORY_KEY,JSON.stringify(h));
+  renderHistory();
+}
+
+// --- Email ---
+function subscribeEmail(){
+  const e=$('emailInput').value.trim();
+  if(!e||!e.includes('@')){showToast('Enter a valid email');return}
+  let subs=[];
+  try{subs=JSON.parse(localStorage.getItem('api-builder-subs')||'[]')}catch{}
+  if(!subs.includes(e)){subs.push(e);localStorage.setItem('api-builder-subs',JSON.stringify(subs))}
+  $('emailInput').value='';
+  showToast('Subscribed!');
+}
+
+// --- Init ---
+renderHistory();
+
+// Close modal on overlay click
+$('curlModal').addEventListener('click',e=>{if(e.target===$('curlModal'))closeCurlImport()});
+
+// Keyboard shortcut
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&e.ctrlKey){sendRequest();e.preventDefault()}
+});
+</script>
+</body>
+</html>

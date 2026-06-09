@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://api-builder.cioa.pages.dev/sitemap.xml
